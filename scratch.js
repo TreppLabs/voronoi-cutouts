@@ -11,6 +11,11 @@ const height = 196;
 const svg = SVG().viewbox(0, 0, width, height);
 
 svg.addTo("body");
+
+// RNG stuff from here: https://github.com/bryc/code/blob/master/jshash/PRNGs.md 
+//    as explained here https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+// I wanted to explicitly seed it so repeatable and similar if we vary number of points, etc
+
 function cyrb128(str) {
     let h1 = 1779033703, h2 = 3144134277,
         h3 = 1013904242, h4 = 2773480762;
@@ -52,11 +57,53 @@ function xoshiro128ss(a, b, c, d) {
 var rand = xoshiro128ss(seed[0], seed[1], seed[2], seed[3]);
 // var rand = mulberry32(seed[0]);
 
+function smooshPoint(x, y) {
+  // how close are we to the side of the box?
+  // move 1/3 of the way from there to nearest side
+  // lamely assume width = height for now
+  
+  var horizontal = x;
+  if (width-x < horizontal) {
+    horizontal = width-x;
+  }
+  var vertical = y;
+  if (height-y < vertical) {
+    vertical = height-y;
+  }
+  if (horizontal < vertical) {
+    // move towards nearest side
+    if (x < width-x) {
+      // move left
+      console.log("left");
+      x = x - (1.0/3.0) * x;
+    } else {
+      // move right towards right edge
+      console.log("right");
+      x = x + (1.0/3.0) * (width-x);
+    }
+  } else {
+    // move towards top or bottom
+    if (y < height-y) {
+      console.log("top");
+      // move up towards top
+      y = y - (1.0/3.0) * y;
+    } else {
+      // move down
+      console.log("down");
+      y = y + (1.0/3.0) * (height-y);
+    }
+  }
+      
+  return [x, y];
+}
 
 const points = [...Array(40)].map(() => {
+  var x = rand() * width;
+  var y = rand() * height;
+  let coords = smooshPoint(x, y);
   return {
-    x: rand() * width,
-    y: rand() * height
+    x: coords[0],
+    y: coords[1]
   };
 });
 
