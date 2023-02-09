@@ -3,7 +3,7 @@
 <head>
   <style>
     * {
-    stroke-width: 10;
+    /* stroke-width: 10; */ /* moved this into the actual SVG object so it persists when saved from browser */
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -23,6 +23,7 @@
   </style>
 </head>
 <body>
+    <button id="copy-button">Copy SVG to Clipboard</button>
 
   <script type="module">
     // got this from here: https://codepen.io/georgedoescode/pen/JjJKPKL
@@ -36,8 +37,11 @@
     const height = 200;
 
     const svg = SVG().viewbox(0, 0, width, height);
+    svg.attr('stroke-width', 10);
 
     svg.addTo("body");
+
+
 
     // RNG stuff from here: https://github.com/bryc/code/blob/master/jshash/PRNGs.md 
     //    as explained here https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
@@ -184,6 +188,21 @@
         svg.polygon(cell.points).fill("none").stroke("#1D1934");
     }
     });
+
+    const copyButton = document.getElementById("copy-button");
+    const svgElement = document.getElementById("svg");
+
+    copyButton.addEventListener("click", () => {
+        const text = svg.flatten().svg()
+
+        navigator.clipboard.writeText(text).then(function() {
+            console.log("SVG copied to clipboard");
+        }, function(error) {
+            console.error("Could not copy SVG to clipboard", error);
+        });
+  });
   </script>
+
+  <img id="foo" />
 </body>
 </html>
