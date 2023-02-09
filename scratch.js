@@ -5,8 +5,8 @@ import {
   random
 } from "https://cdn.skypack.dev/@georgedoescode/generative-utils";
 
-const width = 196;
-const height = 196;
+const width = 200;
+const height = 200;
 
 const svg = SVG().viewbox(0, 0, width, height);
 
@@ -54,14 +54,16 @@ function xoshiro128ss(a, b, c, d) {
     }
 }
 
-var rand = xoshiro128ss(seed[0], seed[1], seed[2], seed[3]);
+var seedTweak = 3;  // try diff numbers til I like what I get
+
+var rand = xoshiro128ss(seed[0]+seedTweak, seed[1], seed[2], seed[3]);
 // var rand = mulberry32(seed[0]);
 
 function smooshPoint(x, y) {
   // how close are we to the side of the box?
   // move 1/3 of the way from there to nearest side
   // lamely assume width = height for now
-  
+  //. NOTE ==> this had some undesirable visual effects so switched to throwing out some points via keepPoint() instead
   var horizontal = x;
   if (width-x < horizontal) {
     horizontal = width-x;
@@ -97,14 +99,44 @@ function smooshPoint(x, y) {
   return [x, y];
 }
 
-const points = [...Array(40)].map(() => {
-  var x = rand() * width;
-  var y = rand() * height;
-  let coords = smooshPoint(x, y);
-  return {
-    x: coords[0],
-    y: coords[1]
-  };
+function keepPoint(x,y) {
+  // test how close the point is to the middle, randomly throw out some of the closer points
+  // return boolean true/false if kept
+  const lowDensity = 0.000;
+  const mediumDensity = 0.2;
+  const lowZoneProportion = 0.2;
+  const medZoneProportion = 0.1;
+  // are we in the low density zone?
+  // if so, test, maybe toss, return
+  if ((x > width*lowZoneProportion && x < width*(1.0-lowZoneProportion)) &&
+      (y > height*lowZoneProportion && y < height*(1.0-lowZoneProportion))) {
+    console.log("(x,y): (" + x + "," + y + ") is low zone");
+    return (rand() < lowDensity);    
+  } else if  ((x > width*medZoneProportion && x < width*(1.0-medZoneProportion)) &&
+              (y > height*medZoneProportion && y < height*(1.0-medZoneProportion))) {
+    console.log("(x,y): (" + x + "," + y + ") is med zone");
+    return (rand() < mediumDensity);    
+  } else {
+    return true;
+  }
+}
+
+const points = [...Array(72)].map(() => {
+  var keeper = false;
+  while (!keeper) {
+    var x = rand() * width;
+    var y = rand() * height;
+    if (keepPoint(x,y)) {
+      keeper = true;
+      return {
+        x: x,
+        y: y
+        //x: coords[0],
+        //y: coords[1]
+      };  
+    }
+    // let coords = smooshPoint(x, y);
+  }
 });
 
 const tessellation = createVoronoiTessellation({
